@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Student Attendance</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:0;
+    background:#1e1e2f;
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    overflow:hidden;
+}
+
+.box{
+    width:850px;
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 0 20px rgba(0,0,0,.4);
+}
+
+h2{
+    text-align:center;
+    margin:5px 0 15px;
+    color:#333;
+}
+
+.row{
+    display:flex;
+    gap:10px;
+}
+
+input{
+    flex:1;
+    padding:10px;
+    margin-bottom:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:15px;
+    box-sizing:border-box;
+}
+
+video{
+    width:100%;
+    height:280px;
+    object-fit:cover;
+    border-radius:10px;
+    border:2px solid #ddd;
+}
+
+canvas{
+    display:none;
+}
+
+button{
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    color:white;
+    font-size:16px;
+    margin-top:8px;
+}
+
+.capture{
+    background:#007bff;
+}
+
+.attend{
+    background:#28a745;
+}
+
+#msg{
+    text-align:center;
+    font-weight:bold;
+    margin-top:10px;
+    color:green;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>Student Attendance</h2>
+
+<div class="row">
+    <input type="text" id="name" placeholder="Enter Name">
+    <input type="text" id="roll" placeholder="Enter Roll Number">
+</div>
+
+<div class="row">
+    <input type="number" id="class_id" placeholder="Enter Class ID">
+    <input type="text" id="token" placeholder="Enter Token">
+</div>
+
+<video id="video" autoplay muted></video>
+
+<canvas id="canvas"></canvas>
+
+<button class="capture" onclick="captureFace()">
+Capture Face
+</button>
+
+<button class="attend" onclick="markAttendance()">
+Mark Attendance
+</button>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+let imageData = "";
+
+// Start Camera
+navigator.mediaDevices.getUserMedia({
+    video:true
+})
+.then(function(stream){
+
+    document.getElementById("video").srcObject = stream;
+
+})
+.catch(function(error){
+
+    console.log(error);
+
+    alert("Camera Not Found");
+
+});
+
+// Capture Face
+function captureFace(){
+
+    let video = document.getElementById("video");
+
+    if(video.videoWidth === 0){
+
+        alert("Wait for camera to load");
+
+        return;
+    }
+
+    let canvas = document.getElementById("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    let ctx = canvas.getContext("2d");
+
+    ctx.drawImage(video,0,0);
+
+    imageData = canvas.toDataURL("image/jpeg");
+
+    document.getElementById("msg").innerHTML =
+    "✅ Face Captured Successfully";
+
+}
+
+// Mark Attendance
+function markAttendance(){
+
+    let name =
+    document.getElementById("name").value.trim();
+
+    let roll =
+    document.getElementById("roll").value.trim();
+
+    let class_id =
+    document.getElementById("class_id").value.trim();
+
+    let token =
+    document.getElementById("token").value.trim();
+
+    if(name=="" || roll=="" || class_id=="" || token==""){
+
+        alert("Please fill all fields");
+
+        return;
+    }
+
+    if(imageData==""){
+
+        alert("Please Capture Face First");
+
+        return;
+    }
+
+    fetch("/verify_student",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            name:name,
+            roll:roll,
+            class_id:class_id,
+            token:token,
+            image:imageData
+
+        })
+
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        document.getElementById("msg").innerHTML =
+        data.message;
+
+        alert(data.message);
+
+    })
+
+    .catch(error => {
+
+        console.log(error);
+
+        alert("Server Error");
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
+

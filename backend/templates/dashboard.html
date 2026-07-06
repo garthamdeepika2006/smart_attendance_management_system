@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Attendance Dashboard</title>
+
+<style>
+body{
+    margin:0;
+    padding:0;
+    font-family:Arial;
+    background:url('/static/classroom.jpg') center/cover no-repeat;
+    height:100vh;
+    overflow:hidden;
+}
+
+.overlay{
+    background:rgba(0,0,0,0.6);
+    height:100vh;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+/* TITLE */
+h1{
+    color:white;
+    font-size:20px;
+    margin:5px;
+}
+
+/* BUTTONS */
+.btns{
+    margin:5px;
+}
+
+button{
+    padding:6px 10px;
+    font-size:12px;
+    margin:3px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    background:#007bff;
+    color:white;
+}
+
+/* CARDS SINGLE ROW */
+.cards{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+
+.card{
+    width:110px;
+    height:65px;
+    border-radius:10px;
+    color:white;
+    text-align:center;
+    font-size:12px;
+    font-weight:bold;
+    padding:5px;
+}
+
+.card p{
+    font-size:18px;
+    margin:5px 0 0 0;
+}
+
+.token{background:#007bff;}
+.present{background:#28a745;}
+.absent{background:#dc3545;}
+
+/* REPORT MODAL */
+.modal{
+    display:none;
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.7);
+}
+
+.modal-content{
+    background:white;
+    width:90%;
+    max-height:80%;
+    margin:5% auto;
+    padding:10px;
+    border-radius:10px;
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:11px;
+}
+
+th{
+    background:#007bff;
+    color:white;
+    padding:5px;
+}
+
+td{
+    border:1px solid #ddd;
+    padding:5px;
+    text-align:center;
+}
+select{
+    padding:6px;
+    border-radius:5px;
+    margin-right:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="overlay">
+
+<h1>📚 Smart Attendance System</h1>
+
+<div class="btns">
+
+<select id="class_id">
+    <option value="1">CSE-A</option>
+    <option value="2">CSE-B</option>
+    <option value="3">MCA</option>
+</select>
+
+<button onclick="startSession()">Start</button>
+
+<button onclick="toggleReport()">Report</button>
+
+</div>
+
+<!-- SINGLE ROW DASHBOARD -->
+<div class="cards">
+
+    <div class="card token">
+        TOKEN
+        <p id="sessionToken">-</p>
+    </div>
+
+    <div class="card present">
+        PRESENT
+        <p id="presentCount">0</p>
+    </div>
+
+    <div class="card absent">
+        ABSENT
+        <p id="absentCount">0</p>
+    </div>
+
+</div>
+
+</div>
+
+<!-- MODAL REPORT -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <button onclick="toggleReport()">Close</button>
+        <div id="reportTable"></div>
+    </div>
+</div>
+
+<script>
+
+function startSession(){
+
+    let class_id =
+    document.getElementById("class_id").value;
+
+    fetch(`/start_session/1/${class_id}`)
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("Session:", data);
+
+        document.getElementById("sessionToken").innerHTML =
+        data.token;
+
+    });
+}
+
+function getPresent(){
+
+    let class_id =
+    document.getElementById("class_id").value;
+
+    fetch(`/present/${class_id}`)
+    .then(res => res.json())
+    .then(data => {
+
+        document.getElementById("presentCount").innerHTML =
+        data.present_students;
+
+    });
+}
+
+function getAbsent(){
+
+    let class_id =
+    document.getElementById("class_id").value;
+
+    fetch(`/absent/${class_id}`)
+    .then(res => res.json())
+    .then(data => {
+
+        document.getElementById("absentCount").innerHTML =
+        data.absent_students;
+
+    });
+}
+
+window.onload = function(){
+
+    getPresent();
+    getAbsent();
+
+};
+
+
+function toggleReport(){
+    let modal = document.getElementById("reportModal");
+
+    if(modal.style.display === "block"){
+        modal.style.display = "none";
+    } else {
+        modal.style.display = "block";
+        getReport();
+    }
+}
+
+function getReport(){
+
+    let class_id =
+    document.getElementById("class_id").value;
+
+    fetch(`/report/${class_id}`)
+    .then(res => res.json())
+    .then(data => {
+
+        let table = `
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Class</th>
+                <th>Date</th>
+                <th>Status</th>
+            </tr>
+        `;
+
+        if(data.error){
+            alert(data.error);
+            return;
+        }
+
+        data.forEach(r => {
+
+            table += `
+            <tr>
+                <td>${r.student_id}</td>
+                <td>${r.name}</td>
+                <td>${r.class_id}</td>
+                <td>${r.date}</td>
+                <td>${r.status}</td>
+            </tr>`;
+
+        });
+
+        table += "</table>";
+
+        document.getElementById("reportTable").innerHTML = table;
+
+    });
+}
+
+window.onload = loadDashboard;
+
+</script>
+
+</body>
+</html>

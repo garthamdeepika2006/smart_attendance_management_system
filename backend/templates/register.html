@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Student Registration</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:0;
+    background:#1e1e2f;
+    font-family:Arial,sans-serif;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    min-height:100vh;
+}
+
+.box{
+    width:420px;
+    background:#fff;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 0 15px rgba(0,0,0,.4);
+
+    max-height:95vh;
+    overflow-y:auto;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:16px;
+    box-sizing:border-box;
+}
+
+video{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    border-radius:10px;
+    border:2px solid #444;
+}
+
+canvas{
+    display:none;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+#capBtn{
+    background:#007bff;
+    color:white;
+}
+
+#regBtn{
+    background:#28a745;
+    color:white;
+}
+
+#msg{
+    text-align:center;
+    margin-top:15px;
+    font-weight:bold;
+    color:green;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>Student Registration</h2>
+
+<input
+type="text"
+id="name"
+placeholder="Enter Name">
+
+<input
+type="text"
+id="roll"
+placeholder="Enter Roll Number">
+
+<video
+id="video"
+autoplay
+playsinline
+muted> </video>
+
+<canvas id="canvas"></canvas>
+
+<button
+id="capBtn"
+onclick="capture()">
+Capture Face </button>
+
+<button
+id="regBtn"
+onclick="registerStudent()">
+Register </button>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+let imageData = "";
+
+// Start Camera
+navigator.mediaDevices.getUserMedia({
+    video:true
+})
+.then(stream=>{
+    document.getElementById("video").srcObject = stream;
+})
+.catch(error=>{
+    console.log(error);
+    alert("Camera Not Found");
+});
+
+
+// Capture Image
+function capture(){
+
+    let video = document.getElementById("video");
+    let canvas = document.getElementById("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    let ctx = canvas.getContext("2d");
+
+    ctx.drawImage(video,0,0);
+
+    imageData = canvas.toDataURL("image/jpeg");
+
+    document.getElementById("msg").innerHTML =
+    "✅ Face Captured Successfully";
+}
+
+
+// Register Student
+function registerStudent(){
+
+    let name =
+    document.getElementById("name").value.trim();
+
+    let roll =
+    document.getElementById("roll").value.trim();
+
+    let nameRegex = /^[A-Za-z ]+$/;
+
+    if(!nameRegex.test(name)){
+        alert("Name should contain only alphabets and spaces");
+        return;
+    }
+
+    let rollRegex = /^[A-Za-z0-9]+$/;
+
+    if(!rollRegex.test(roll)){
+        alert("Roll Number should contain only letters and numbers");
+        return;
+    }
+
+    if(imageData==""){
+        alert("Please Capture Face");
+        return;
+    }
+
+    fetch("/api/register",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            name:name,
+            roll:roll,
+            image:imageData
+        })
+
+    })
+
+    .then(response=>response.json())
+
+    .then(data=>{
+
+        if(data.status=="success"){
+
+            alert("Registration Successful ✅");
+
+            document.getElementById("msg").innerHTML =
+            "Student Registered Successfully 🎉";
+
+            document.getElementById("name").value="";
+            document.getElementById("roll").value="";
+
+            imageData="";
+
+        }
+        else{
+
+            alert(data.message);
+
+        }
+
+    })
+
+    .catch(error=>{
+
+        console.log(error);
+
+        alert("Server Error");
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
